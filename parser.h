@@ -1,6 +1,8 @@
 #ifndef YOLO_PARSER_H
 #define YOLO_PARSER_H
 
+#include <stdio.h>
+
 typedef enum ExprType {
   EXPR_TYPE_WORD,
   EXPR_TYPE_LIST,
