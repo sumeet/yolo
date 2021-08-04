@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,8 +7,10 @@
 
 #include "parser.h"
 
-void panic(char *msg) {
-  perror(msg);
+void panic(char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
   exit(1);
 }
 
@@ -15,38 +18,36 @@ void panic(char *msg) {
 const size_t WORD_BUFFER_SIZE = 20 * 1024;
 const size_t DEBUG_PADDING = 1;
 
-List *new_list(Expr *expr) {
+List *new_list(Expr expr) {
   List *list = malloc(sizeof(List));
   list->this = expr;
   list->next = NULL;
   return list;
 }
 
-Expr *new_expr_list(List *list) {
-  Expr *expr = malloc(sizeof(Expr));
-  expr->type = EXPR_TYPE_LIST;
-  expr->list = list;
+Expr new_expr_list(List *list) {
+  Expr expr = {.type = EXPR_TYPE_LIST, .list = list};
   return expr;
 }
 
-Expr *new_expr_word(char *begin, size_t len) {
+Expr new_expr_word(char *begin, size_t len) {
   char *new_guy = malloc(sizeof(char) * (len + 1));
   memcpy(new_guy, begin, len);
   new_guy[len] = '\0';
 
-  Expr *expr = malloc(sizeof(Expr));
-  expr->type = EXPR_TYPE_WORD;
-  expr->word = new_guy;
+  Expr expr = {.type = EXPR_TYPE_WORD, .word = new_guy};
   return expr;
 }
 
-void append(List **list, Expr *expr) {
+void append(List **list, Expr expr) {
   if (*list == NULL) {
     *list = new_list(expr);
   } else {
     append(&((*list)->next), expr);
   }
 }
+
+bool is_empty(List *list) { return list == NULL; }
 
 void append_word(List **exprs, char *begin, size_t *len) {
   if (*len > 0) {
@@ -55,7 +56,7 @@ void append_word(List **exprs, char *begin, size_t *len) {
   }
 }
 
-Expr *parse_exprs_rec(FILE *file, bool is_inside_list) {
+Expr parse_exprs_rec(FILE *file, bool is_inside_list) {
   List *exprs = NULL;
   size_t current_word_len = 0;
   char current_word[WORD_BUFFER_SIZE];
@@ -92,7 +93,7 @@ Expr *parse_exprs_rec(FILE *file, bool is_inside_list) {
   return new_expr_list(exprs);
 }
 
-Expr *parse_exprs(FILE *file) { return parse_exprs_rec(file, false); }
+Expr parse_exprs(FILE *file) { return parse_exprs_rec(file, false); }
 
 void debug_padding(size_t depth) {
   for (size_t i = 0; i < (depth * DEBUG_PADDING); i++) {
@@ -100,16 +101,16 @@ void debug_padding(size_t depth) {
   }
 }
 
-void debug_expr_rec(Expr *expr, size_t current_depth) {
-  switch (expr->type) {
+void debug_expr_rec(Expr expr, size_t current_depth) {
+  switch (expr.type) {
   case EXPR_TYPE_WORD:
     debug_padding(current_depth * DEBUG_PADDING);
-    printf("%s", expr->word);
+    printf("%s", expr.word);
     break;
   case EXPR_TYPE_LIST:
     debug_padding(current_depth * DEBUG_PADDING);
     printf("(\n");
-    List *head = expr->list;
+    List *head = expr.list;
     while (head != NULL) {
       debug_expr_rec(head->this, current_depth + 1);
       head = head->next;
@@ -121,4 +122,4 @@ void debug_expr_rec(Expr *expr, size_t current_depth) {
   putchar((int)'\n');
 }
 
-void debug_expr(Expr *expr) { debug_expr_rec(expr, 0); }
+void debug_expr(Expr expr) { debug_expr_rec(expr, 0); }
