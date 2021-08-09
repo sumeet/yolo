@@ -39,6 +39,7 @@ Value new_empty_list_value() {
 
 ValueList value_as_list(Value value) { return *value.list; }
 long value_as_num(Value value) { return value.num; }
+char *value_as_word(Value value) { return value.word; }
 
 void value_list_append(ValueList **list, Value value) {
   if (*list == NULL) {
@@ -135,6 +136,30 @@ Value eval(Interpreter interp, Expr expr) {
   }
 }
 
+void print_value(Value value) {
+  switch (value.type) {
+  case VALUE_TYPE_NUM:
+    printf("%ld", value_as_num(value));
+    break;
+  case VALUE_TYPE_WORD:
+    printf("%s", value_as_word(value));
+    break;
+  case VALUE_TYPE_LIST:
+    printf("(");
+
+    ValueList list = value_as_list(value);
+    print_value(list.this);
+    while (list.next != NULL) {
+      printf(" ");
+      list = *list.next;
+      print_value(list.this);
+    }
+
+    printf(")");
+    break;
+  }
+}
+
 int main() {
   FILE *file = fopen("./calc.yolo", "r");
   if (file == NULL) {
@@ -146,7 +171,9 @@ int main() {
   debug_expr(expr);
 
   Interpreter interp = init_interpreter();
+  printf("--- EVAL ---\n");
   Value value = eval(interp, expr);
-  printf("hello");
+  print_value(value);
+  printf("\n");
   return 0;
 }
