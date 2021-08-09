@@ -20,18 +20,19 @@ typedef struct ValueList {
   struct ValueList *next; // can be NULL
 } ValueList;
 
-typedef Value (*Function)(Value);
+typedef struct Interpreter {
+  struct Builtin *builtins;
+  FILE *input;
+} Interpreter;
+
+typedef Value (*Function)(Interpreter, Value);
 
 typedef struct Builtin {
   char *key;
   Function value;
 } Builtin;
 
-typedef struct Interpreter {
-  Builtin *builtins;
-} Interpreter;
-
-Interpreter init_interpreter();
+Interpreter init_interpreter(FILE *input);
 Value eval(Interpreter, Expr);
 void print_value(Value);
 

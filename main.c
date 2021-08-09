@@ -13,16 +13,16 @@ int main(int argc, char *argv[]) {
     panic("unable to open file %s", argv[1]);
   }
 
-  FILE *input_file = NULL;
-  if (argc > 2) {
-    input_file = fopen(argv[2], "r");
-  }
-
   Expr expr = parse_exprs(yolo_file);
   printf("--- PARSED ---\n");
   debug_expr(expr);
 
-  struct Interpreter interp = init_interpreter();
+  FILE *input_file = NULL;
+  if (argc > 2) {
+    input_file = fopen(argv[2], "r");
+  }
+  struct Interpreter interp = init_interpreter(input_file);
+
   printf("--- EVAL ---\n");
   struct Value value = eval(interp, expr);
   print_value(value);

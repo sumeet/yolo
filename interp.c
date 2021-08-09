@@ -1,7 +1,3 @@
-//
-// Created by sumeet on 8/8/21.
-//
-
 #include "interp.h"
 #include "parser.h"
 #include "stb_ds.h"
@@ -40,7 +36,7 @@ void value_list_append(ValueList **list, Value value) {
   }
 }
 
-Value add(Value value) {
+Value builtin_add(__attribute__((unused)) Interpreter interp, Value value) {
   long acc = 0;
   // TODO: i think this doesn't handle the case is value is empty
   ValueList list = value_as_list(value);
@@ -55,11 +51,26 @@ Value add(Value value) {
   return new_num_value(acc);
 }
 
-Interpreter init_interpreter() {
+Value builtin_list(__attribute__((unused)) Interpreter interp, Value value) {
+  print_value(value);
+  return new_num_value(123);
+}
+
+Value builtin_getc(Interpreter interp, __attribute__((unused)) Value value) {
+  return new_num_value(getc(interp.input));
+}
+
+// input can be NULL
+Interpreter init_interpreter(FILE *input) {
   Builtin *builtin_by_name = NULL;
   sh_new_strdup(builtin_by_name);
-  shput(builtin_by_name, "+", add);
-  Interpreter interp = {.builtins = builtin_by_name};
+  shdefault(builtin_by_name, NULL);
+  shput(builtin_by_name, "+", builtin_add);
+  shput(builtin_by_name, "list", builtin_list);
+  if (input != NULL) {
+    shput(builtin_by_name, "getc", builtin_getc);
+  }
+  Interpreter interp = {.builtins = builtin_by_name, .input = input};
   return interp;
 }
 
@@ -110,7 +121,7 @@ Value eval(Interpreter interp, Expr expr) {
     if (func == NULL) {
       panic("function %s not found", first_value.word);
     }
-    value = func(new_list_value(value_root->next));
+    value = func(interp, new_list_value(value_root->next));
     break;
   }
   return value;
@@ -127,12 +138,14 @@ void print_value(Value value) {
   case VALUE_TYPE_LIST:
     printf("(");
 
-    ValueList list = value_as_list(value);
-    print_value(list.this);
-    while (list.next != NULL) {
-      printf(" ");
-      list = *list.next;
+    if (value.list != NULL) {
+      ValueList list = value_as_list(value);
       print_value(list.this);
+      while (list.next != NULL) {
+        printf(" ");
+        list = *list.next;
+        print_value(list.this);
+      }
     }
 
     printf(")");
