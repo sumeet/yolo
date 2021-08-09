@@ -66,7 +66,12 @@ Value builtin_getc(Interpreter interp,
 Value builtin_define(Interpreter interp, ValueList *list) {
   Value *v = malloc(sizeof(Value));
   *v = list->next->this;
-  shput(interp.definitions, value_as_word(list->this), v);
+
+  char *word = value_as_word(list->this);
+  if (shgeti(interp.definitions, word) > -1) {
+    shdel(interp.definitions, word);
+  }
+  shput(interp.definitions, word, v);
   return new_empty_list_value();
 }
 
