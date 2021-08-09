@@ -36,6 +36,14 @@ void value_list_append(ValueList **list, Value value) {
   }
 }
 
+Value builtin_prepend(__attribute__((unused)) Interpreter interp,
+                      ValueList *arg_list) {
+  Value new_list_value = new_empty_list_value();
+  value_list_append(&new_list_value.list, arg_list->this);
+  new_list_value.list->next = arg_list->next->this.list;
+  return new_list_value;
+}
+
 Value builtin_add(__attribute__((unused)) Interpreter interp, ValueList *list) {
   long acc = 0;
   while (list != NULL) {
@@ -75,7 +83,7 @@ Value builtin_dedef(Interpreter interp, ValueList *list) {
 // after it. a weird design... perhaps later this will even be
 // some sort of eval
 Value builtin_block(__attribute__((unused)) Interpreter i,
-                    __attribute__((unused)) Value v) {
+                    __attribute__((unused)) ValueList *v) {
   return new_num_value(0);
 }
 
@@ -96,6 +104,7 @@ Interpreter init_interpreter(FILE *input) {
   sh_new_strdup(definition_by_name);
   shdefault(definition_by_name, NULL);
 
+  shput(builtin_by_name, "prepend", builtin_prepend);
   shput(builtin_by_name, "+", builtin_add);
   shput(builtin_by_name, "list", builtin_list);
   shput(builtin_by_name, "define", builtin_define);

@@ -1,3 +1,6 @@
 block
 (define input (list))
-(dbg (@ input))
+(define input2 (prepend a (@ input)))
+(define input3 (prepend b (@ input2)))
+(dbg (@ input2))
+(dbg (@ input3))
