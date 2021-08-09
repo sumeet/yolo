@@ -25,6 +25,7 @@ int main(int argc, char *argv[]) {
 
   printf("--- EVAL ---\n");
   struct Value value = eval(interp, expr);
+  printf("Eval result: ");
   print_value(value);
   printf("\n");
   return 0;

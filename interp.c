@@ -36,39 +36,34 @@ void value_list_append(ValueList **list, Value value) {
   }
 }
 
-Value builtin_add(__attribute__((unused)) Interpreter interp, Value value) {
+Value builtin_add(__attribute__((unused)) Interpreter interp, ValueList *list) {
   long acc = 0;
-  // TODO: i think this doesn't handle the case is value is empty
-  ValueList list = value_as_list(value);
-  while (true) {
-    acc += value_as_num(list.this);
-    if (list.next == NULL) {
-      break;
-    } else {
-      list = *list.next;
-    }
+  while (list != NULL) {
+    acc += value_as_num(list->this);
+    list = list->next;
   }
   return new_num_value(acc);
 }
 
-Value builtin_list(__attribute__((unused)) Interpreter interp, Value value) {
-  return new_list_value(value.list);
+Value builtin_list(__attribute__((unused)) Interpreter interp,
+                   ValueList *list) {
+  return new_list_value(list);
 }
 
-Value builtin_getc(Interpreter interp, __attribute__((unused)) Value value) {
+Value builtin_getc(Interpreter interp,
+                   __attribute__((unused)) ValueList *list) {
   return new_num_value(getc(interp.input));
 }
 
-Value builtin_define(Interpreter interp, Value value) {
-  ValueList list = value_as_list(value);
+Value builtin_define(Interpreter interp, ValueList *list) {
   Value *v = malloc(sizeof(Value));
-  *v = list.next->this;
-  shput(interp.definitions, value_as_word(list.this), v);
+  *v = list->next->this;
+  shput(interp.definitions, value_as_word(list->this), v);
   return new_empty_list_value();
 }
 
-Value builtin_dedef(Interpreter interp, Value value) {
-  char *word = value_as_word(value_as_list(value).this);
+Value builtin_dedef(Interpreter interp, ValueList *list) {
+  char *word = value_as_word(list->this);
   Value *found = shget(interp.definitions, word);
   if (found == NULL) {
     panic("%s was undefined", word);
@@ -84,9 +79,9 @@ Value builtin_block(__attribute__((unused)) Interpreter i,
   return new_num_value(0);
 }
 
-Value builtin_dbg(__attribute__((unused)) Interpreter i, Value value) {
+Value builtin_dbg(__attribute__((unused)) Interpreter i, ValueList *list) {
   printf("dbg: ");
-  print_value(value_as_list(value).this);
+  print_value(list->this);
   printf("\n");
   return new_empty_list_value();
 }
@@ -166,7 +161,7 @@ Value eval(Interpreter interp, Expr expr) {
     if (func == NULL) {
       panic("function %s not found", first_value.word);
     }
-    value = func(interp, new_list_value(value_root->next));
+    value = func(interp, value_root->next);
     break;
   }
   return value;

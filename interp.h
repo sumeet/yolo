@@ -26,7 +26,7 @@ typedef struct Interpreter {
   FILE *input;
 } Interpreter;
 
-typedef Value (*Function)(Interpreter, Value);
+typedef Value (*Function)(Interpreter, ValueList *);
 
 typedef struct Builtin {
   char *key;
