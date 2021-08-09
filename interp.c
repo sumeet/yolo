@@ -52,12 +52,43 @@ Value builtin_add(__attribute__((unused)) Interpreter interp, Value value) {
 }
 
 Value builtin_list(__attribute__((unused)) Interpreter interp, Value value) {
-  print_value(value);
-  return new_num_value(123);
+  return new_list_value(value.list);
 }
 
 Value builtin_getc(Interpreter interp, __attribute__((unused)) Value value) {
   return new_num_value(getc(interp.input));
+}
+
+Value builtin_define(Interpreter interp, Value value) {
+  ValueList list = value_as_list(value);
+  Value *v = malloc(sizeof(Value));
+  *v = list.next->this;
+  shput(interp.definitions, value_as_word(list.this), v);
+  return new_empty_list_value();
+}
+
+Value builtin_dedef(Interpreter interp, Value value) {
+  char *word = value_as_word(value_as_list(value).this);
+  Value *found = shget(interp.definitions, word);
+  if (found == NULL) {
+    panic("%s was undefined", word);
+  }
+  return *found;
+}
+
+// this doesn't do anything, allowing for code blocks to come
+// after it. a weird design... perhaps later this will even be
+// some sort of eval
+Value builtin_block(__attribute__((unused)) Interpreter i,
+                    __attribute__((unused)) Value v) {
+  return new_num_value(0);
+}
+
+Value builtin_dbg(__attribute__((unused)) Interpreter i, Value value) {
+  printf("dbg: ");
+  print_value(value_as_list(value).this);
+  printf("\n");
+  return new_empty_list_value();
 }
 
 // input can be NULL
@@ -65,12 +96,23 @@ Interpreter init_interpreter(FILE *input) {
   Builtin *builtin_by_name = NULL;
   sh_new_strdup(builtin_by_name);
   shdefault(builtin_by_name, NULL);
+
+  Definition *definition_by_name = NULL;
+  sh_new_strdup(definition_by_name);
+  shdefault(definition_by_name, NULL);
+
   shput(builtin_by_name, "+", builtin_add);
   shput(builtin_by_name, "list", builtin_list);
+  shput(builtin_by_name, "define", builtin_define);
+  shput(builtin_by_name, "@", builtin_dedef);
+  shput(builtin_by_name, "block", builtin_block);
+  shput(builtin_by_name, "dbg", builtin_dbg);
   if (input != NULL) {
     shput(builtin_by_name, "getc", builtin_getc);
   }
-  Interpreter interp = {.builtins = builtin_by_name, .input = input};
+  Interpreter interp = {.builtins = builtin_by_name,
+                        .definitions = definition_by_name,
+                        .input = input};
   return interp;
 }
 
@@ -115,7 +157,10 @@ Value eval(Interpreter interp, Expr expr) {
 
     Value first_value = value_root->this;
     if (first_value.type != VALUE_TYPE_WORD) {
-      panic("first element of list must be a word, but was a list");
+      printf("debug log for failed value:\n");
+      print_value(first_value);
+      printf("\n");
+      panic("first element of list must be a word");
     }
     Function func = get_func(interp, first_value.word);
     if (func == NULL) {

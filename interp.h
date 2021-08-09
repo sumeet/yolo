@@ -22,6 +22,7 @@ typedef struct ValueList {
 
 typedef struct Interpreter {
   struct Builtin *builtins;
+  struct Definition *definitions;
   FILE *input;
 } Interpreter;
 
@@ -31,6 +32,11 @@ typedef struct Builtin {
   char *key;
   Function value;
 } Builtin;
+
+typedef struct Definition {
+  char *key;
+  Value *value;
+} Definition;
 
 Interpreter init_interpreter(FILE *input);
 Value eval(Interpreter, Expr);
